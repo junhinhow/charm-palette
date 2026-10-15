@@ -8,13 +8,24 @@ Visualizador e gerador de paletas de cores no terminal — pre-visualize temas d
 
 - **ShowPalette** — renderiza swatches de cores com valores hex
 - **ShowANSI256** — exibe todas as 256 cores ANSI em grade
-- **ShowTrueColor** — gradiente arco-iris com dimensoes configuraveis
-- **ShowTheme** — exibe paleta tematica com cores nomeadas
-- **CompareThemes** — comparacao de temas lado a lado
+- **ShowTrueColor** — gradiente arco-íris com dimensões configuráveis
+- **ShowTheme** — exibe paleta temática com cores nomeadas
+- **CompareThemes** — comparação de temas lado a lado
 
-Construido com [Lip Gloss](https://github.com/charmbracelet/lipgloss).
+Construído com [Lip Gloss](https://github.com/charmbracelet/lipgloss).
 
-## Instalacao
+Todos os renderizadores são **determinísticos**: os temas são ordenados
+alfabeticamente, de modo que a saída nunca muda entre chamadas (seguro para
+testes por snapshot). As cores são lidas através do modelo `NRGBA`, portanto
+cores com alfa parcial não aparecem escurecidas, e os rótulos são desenhados
+com uma cor de **contraste automático** (preto ou branco) em vez da própria cor
+da amostra, que seria ilegível em temas escuros.
+
+Entradas inválidas (uma cor `nil`, uma largura não positiva) nunca causam
+pânico: as funções `Show*` devolvem uma string vazia e as variantes `Show*Err`
+devolvem um erro detalhado.
+
+## Instalação
 
 ```bash
 go get github.com/junhinhow/charm-palette@latest
@@ -36,7 +47,7 @@ func main() {
     // Grade de cores ANSI 256
     fmt.Println(palette.ShowANSI256())
 
-    // Gradiente arco-iris true color
+    // Gradiente arco-íris true color
     fmt.Println(palette.ShowTrueColor(80, 10))
 
     // Paleta personalizada
@@ -48,7 +59,7 @@ func main() {
     }
     fmt.Println(palette.ShowPalette(cores, 80))
 
-    // Exibicao de tema
+    // Exibição de tema
     tema := map[string]color.Color{
         "primaria":  color.RGBA{R: 99, G: 102, B: 241, A: 255},
         "secundaria": color.RGBA{R: 168, G: 85, B: 247, A: 255},
@@ -62,20 +73,50 @@ func main() {
 ## API
 
 ### `ShowPalette(colors []color.Color, width int) string`
-Renderiza swatches de cores em linha com labels hex abaixo.
+Renderiza swatches de cores em linha com rótulos hex abaixo. Quando a largura
+solicitada é pequena demais para o rótulo `#rrggbb` de cada cor, as cores são
+empilhadas verticalmente, de modo que a largura pedida nunca é ultrapassada.
+Devolve uma string vazia para entradas inválidas.
+
+### `ShowPaletteErr(colors []color.Color, width int) (string, error)`
+Igual a `ShowPalette`, mas informa as entradas inválidas (`ErrNoColors`,
+`ErrNilColor`, `ErrInvalidWidth`).
 
 ### `ShowANSI256() string`
-Exibe todas as 256 cores ANSI organizadas: padrao (0-15), cubo (16-231) e escala de cinza (232-255).
+Exibe todas as 256 cores ANSI organizadas: padrão (0-15), cubo (16-231) e escala de cinza (232-255).
 
 ### `ShowTrueColor(width, height int) string`
-Renderiza gradiente arco-iris com true color, variando matiz horizontal e luminosidade vertical.
+Renderiza gradiente arco-íris com true color, variando matiz horizontal e luminosidade vertical.
+
+### `ShowTrueColorErr(width, height int) (string, error)`
+Igual a `ShowTrueColor`, mas informa dimensões inválidas (`ErrInvalidWidth`).
 
 ### `ShowTheme(name string, colors map[string]color.Color) string`
-Exibe um tema nomeado com swatches, labels e valores hex.
+Exibe um tema nomeado com swatches, rótulos e valores hex. As cores são
+ordenadas alfabeticamente. Devolve uma string vazia para entradas inválidas.
+
+### `ShowThemeErr(name string, colors map[string]color.Color) (string, error)`
+Igual a `ShowTheme`, mas informa as entradas inválidas (`ErrNoColors`,
+`ErrNilColor`).
 
 ### `CompareThemes(themes ...map[string]color.Color) string`
-Renderiza multiplos temas lado a lado para comparacao visual.
+Renderiza múltiplos temas lado a lado para comparação visual, com o cabeçalho
+alinhado às colunas de cores. As cores são ordenadas alfabeticamente. Devolve
+uma string vazia para entradas inválidas.
 
-## Licenca
+### `CompareThemesErr(themes ...map[string]color.Color) (string, error)`
+Igual a `CompareThemes`, mas informa as entradas inválidas (`ErrNoThemes`,
+`ErrNilColor`).
+
+### Erros
+
+| Erro | Descrição |
+|------|-----------|
+| `ErrNoColors` | Nenhuma cor foi informada |
+| `ErrNoThemes` | Nenhum tema foi informado |
+| `ErrNilColor` | A lista de cores contém uma entrada `nil` |
+| `ErrInvalidWidth` | A largura de exibição (ou as dimensões do gradiente) não é positiva |
+
+## Licença
 
 [MIT](LICENSE) - junhinhow

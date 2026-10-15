@@ -2,7 +2,7 @@
 
 Terminal color palette viewer and generator — preview themes in your terminal.
 
-> **[Leia em Portugues (PT-BR)](README.pt-br.md)**
+> **[Leia em Português (PT-BR)](README.pt-br.md)**
 
 ## Features
 
@@ -13,6 +13,16 @@ Terminal color palette viewer and generator — preview themes in your terminal.
 - **CompareThemes** — side-by-side theme comparison
 
 Powered by [Lip Gloss](https://github.com/charmbracelet/lipgloss).
+
+Every renderer is **deterministic**: themes are sorted alphabetically, so the
+output never changes between calls (safe for snapshot tests). Colors are read
+through the `NRGBA` model, so colors with partial alpha are not darkened, and
+labels are painted with an **automatic contrast** color (black or white) instead
+of the sample color itself, which would be unreadable on dark themes.
+
+Invalid input (a `nil` color, a non-positive width) never panics: the `Show*`
+functions return an empty string and the `Show*Err` variants return a detailed
+error.
 
 ## Install
 
@@ -63,7 +73,14 @@ func main() {
 ## API
 
 ### `ShowPalette(colors []color.Color, width int) string`
-Renders color swatches in a row with hex labels below.
+Renders color swatches in a row with hex labels below. When the requested width
+is too small to fit the `#rrggbb` label of every swatch, the colors are stacked
+vertically instead, so the requested width is never exceeded. Returns an empty
+string for invalid input.
+
+### `ShowPaletteErr(colors []color.Color, width int) (string, error)`
+Same as `ShowPalette`, but reports invalid input (`ErrNoColors`, `ErrNilColor`,
+`ErrInvalidWidth`).
 
 ### `ShowANSI256() string`
 Displays all 256 ANSI colors organized by category: standard (0-15), color cube (16-231), and grayscale (232-255).
@@ -71,11 +88,32 @@ Displays all 256 ANSI colors organized by category: standard (0-15), color cube 
 ### `ShowTrueColor(width, height int) string`
 Renders a rainbow gradient using true color, varying hue horizontally and lightness vertically.
 
+### `ShowTrueColorErr(width, height int) (string, error)`
+Same as `ShowTrueColor`, but reports invalid dimensions (`ErrInvalidWidth`).
+
 ### `ShowTheme(name string, colors map[string]color.Color) string`
-Displays a named theme with color swatches, labels, and hex values.
+Displays a named theme with color swatches, labels, and hex values. Colors are
+sorted alphabetically. Returns an empty string for invalid input.
+
+### `ShowThemeErr(name string, colors map[string]color.Color) (string, error)`
+Same as `ShowTheme`, but reports invalid input (`ErrNoColors`, `ErrNilColor`).
 
 ### `CompareThemes(themes ...map[string]color.Color) string`
-Renders multiple themes side by side for visual comparison.
+Renders multiple themes side by side for visual comparison, with the header
+aligned to the color columns. Colors are sorted alphabetically. Returns an
+empty string for invalid input.
+
+### `CompareThemesErr(themes ...map[string]color.Color) (string, error)`
+Same as `CompareThemes`, but reports invalid input (`ErrNoThemes`, `ErrNilColor`).
+
+### Errors
+
+| Error | Description |
+|-------|-------------|
+| `ErrNoColors` | No color was provided |
+| `ErrNoThemes` | No theme was provided |
+| `ErrNilColor` | The color list contains a `nil` entry |
+| `ErrInvalidWidth` | The display width (or the gradient dimensions) is not positive |
 
 ## License
 
